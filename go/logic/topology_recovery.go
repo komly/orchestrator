@@ -1343,13 +1343,18 @@ func ForceMasterTakeover(clusterName string, destination *inst.Instance) (topolo
 // It will point old master at the newly promoted master at the correct coordinates, but will not start replication.
 func GracefulMasterTakeover(clusterName string) (topologyRecovery *TopologyRecovery, promotedMasterCoordinates *inst.BinlogCoordinates, err error) {
 	clusterMasters, err := inst.ReadClusterWriteableMaster(clusterName)
+
 	if err != nil {
 		return nil, nil, fmt.Errorf("Cannot deduce cluster master for %+v", clusterName)
 	}
 	if len(clusterMasters) != 1 {
 		return nil, nil, fmt.Errorf("Cannot deduce cluster master for %+v. Found %+v potential masters", clusterName, len(clusterMasters))
 	}
-	clusterMaster := clusterMasters[0]
+	err = inst.FlushHosts(&clusterMasters[0].Key)
+	if err != nil {
+		return nil, nil, err
+	}
+	clusterMaster, err := inst.ReadTopologyInstanceBufferable(&clusterMasters[0].Key, false)
 	if len(clusterMaster.SlaveHosts) == 0 {
 		return nil, nil, fmt.Errorf("Master %+v doesn't seem to have replicas", clusterMaster.Key)
 	}

@@ -103,6 +103,15 @@ func ReadTopologyInstance(instanceKey *InstanceKey) (*Instance, error) {
 	return ReadTopologyInstanceBufferable(instanceKey, false)
 }
 
+func FlushHosts(instanceKey *InstanceKey) error {
+	db, err := db.OpenDiscovery(instanceKey.Hostname, instanceKey.Port)
+	if err != nil {
+		return err
+	}
+	db.Query("FLUSH HOSTS");
+	return nil
+}
+
 // ReadTopologyInstance connects to a topology MySQL instance and reads its configuration and
 // replication status. It writes read info into orchestrator's backend.
 // Writes are optionally buffered.
